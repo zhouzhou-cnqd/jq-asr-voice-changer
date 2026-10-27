@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>语音识别 · 变声工坊</title>
+<style>
+  :root {
+    --primary: #8b9cff;
+    --primary-2: #c084fc;
+    --primary-hover: #6a7bf5;
+    --primary-soft: rgba(139,156,255,0.20);
+    --success: #34d399;
+    --success-soft: rgba(52,211,153,0.20);
+    --danger: #f87171;
+    --text: #ffffff;
+    --text-secondary: rgba(255,255,255,0.88);
+    --text-muted: rgba(255,255,255,0.66);
+    --border: rgba(255,255,255,0.24);
+    --bg: rgba(255,255,255,0.10);
+    --card: rgba(255,255,255,0.12);
+    --glass: rgba(255,255,255,0.12);
+    --glass-strong: rgba(255,255,255,0.20);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background:
+      radial-gradient(1200px 700px at 12% -12%, rgba(99,102,241,0.55), transparent 60%),
+      radial-gradient(1100px 650px at 88% 8%, rgba(168,85,247,0.48), transparent 58%),
+      radial-gradient(900px 700px at 50% 110%, rgba(34,197,94,0.30), transparent 60%),
+      linear-gradient(160deg, #1e1b4b 0%, #312e81 40%, #4c1d95 100%);
+    min-height: 100vh;
+    padding: 40px 24px;
+    color: var(--text);
+    position: relative;
+    overflow-x: hidden;
+  }
+  /* 背景漂浮光斑 */
+  body::before {
+    content: '';
+    position: fixed;
+    width: 480px; height: 480px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(168,85,247,0.35), transparent 70%);
+    top: -120px; left: -120px;
+    filter: blur(60px);
+    pointer-events: none;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    width: 560px; height: 560px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(34,197,94,0.25), transparent 70%);
+    bottom: -180px; right: -120px;
+    filter: blur(80px);
+    pointer-events: none;
+  }
+
+  /* ===== 顶部 ===== */
+  .topbar {
+    max-width: 1600px;
+    margin: 0 auto 28px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .brand-logo {
+    width: 56px; height: 56px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #6a7bf5 0%, #8b5cf6 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    box-shadow: 0 10px 24px rgba(91,108,240,0.35);
+    flex-shrink: 0;
+  }
+  .brand-title h1 {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    background: linear-gradient(120deg, #c7d2fe 0%, #e9d5ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .brand-title p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 3px;
+  }
+  .brand-status {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #e0e7ff;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+  }
+  .brand-status .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 0 3px rgba(34,193,123,0.18);
+  }
+
+  /* ===== 主布局：横向拉长，左窄右宽 ===== */
+  .main {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 430px 1fr;
+    gap: 24px;
+    align-items: stretch;
+  }
+  @media (max-width: 980px) {
+    .main { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--glass);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.12);
+    padding: 30px 28px;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .panel-title .badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e1b4b;
+    background: #c7d2fe;
+    border-radius: 6px;
+    padding: 2px 9px;
+  }
+
+  /* ===== 设置行 ===== */
+  .setting-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    transition: border-color 0.15s;
+  }
+  .setting-row:hover { border-color: rgba(255,255,255,0.32); }
+  .setting-row .icon { font-size: 15px; flex-shrink: 0; }
+  .setting-row label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    width: 58px;
+  }
+  .setting-row select {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    color: var(--text);
+    padding: 4px 0;
+    cursor: pointer;
+    outline: none;
+    min-width: 0;
+  }
+  .setting-row select option {
+    background: #312e81;
+    color: #fff;
+  }
+  .setting-row .mini-btn {
+    background: var(--glass-strong);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .setting-row .mini-btn:hover {
+    background: var(--primary-soft);
+    color: #fff;
+    border-color: var(--primary);
+  }
+
+  /* ===== AI 辅助配置面板 ===== */
+  .ai-config {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+  }
+  .ai-config-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .ai-config-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+  .ai-config-body {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .ai-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ai-field label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    width: 58px;
+  }
+  .ai-field input {
+    flex: 1;
+    min-width: 0;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 13px;
+    color: #fff;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .ai-field input::placeholder { color: var(--text-muted); }
+  .ai-field input:focus { border-color: var(--primary); }
+  .ai-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* ===== 麦克风 ===== */
+  .mic-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 18px 0 16px;
+  }
+  .mic-btn {
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 38px;
+    background: linear-gradient(135deg, #6a7bf5 0%, #8b5cf6 100%);
+    box-shadow: 0 14px 34px rgba(91,108,240,0.42);
+    transition: all 0.25s ease;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 14px;
+    position: relative;
+    color: #fff;
+  }
+  .mic-btn:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 18px 40px rgba(91,108,240,0.5); }
+  .mic-btn:active { transform: scale(0.97); }
+  .mic-btn.recording {
+    background: linear-gradient(135deg, #f0575c 0%, #e03a5a 100%);
+    box-shadow: 0 14px 34px rgba(229,72,77,0.45);
+  }
+  .mic-btn.recording::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 3px solid rgba(229,72,77,0.5);
+    animation: ring 1.4s ease-out infinite;
+  }
+  @keyframes ring {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.35); opacity: 0; }
+  }
+  .mic-hint {
+    font-size: 15px;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+  .mic-hint.recording { color: var(--danger); }
+  .mic-timer {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--danger);
+    font-variant-numeric: tabular-nums;
+    min-height: 32px;
+    margin-bottom: 2px;
+  }
+
+  /* ===== 波形 ===== */
+  .wave-wrap {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 14px;
+  }
+  .wave-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .wave-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+  .wave-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: #c7d2fe;
+    background: rgba(139,156,255,0.20);
+    border: 1px solid rgba(139,156,255,0.45);
+    border-radius: 20px;
+    padding: 2px 10px;
+  }
+  .wave-badge.live { color: #fecaca; border-color: rgba(248,113,113,0.6); background: rgba(248,113,113,0.22); }
+  .wave-badge.done { color: #a7f3d0; border-color: rgba(52,211,153,0.6); background: rgba(52,211,153,0.20); }
+  #waveCanvas {
+    width: 100%;
+    height: 80px;
+    display: block;
+    background: rgba(255,255,255,0.06);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  /* ===== 变声面板 ===== */
+  .voice-panel {
+    border-top: 1px dashed var(--border);
+    padding-top: 18px;
+    margin-top: 4px;
+  }
+  .voice-panel-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .voice-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .voice-opt {
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .voice-opt:hover { border-color: rgba(255,255,255,0.4); background: var(--glass-strong); }
+  .voice-opt.active {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+  }
+  .voice-opt .v-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+  .voice-opt .v-name { font-size: 12px; font-weight: 700; color: #ffffff; }
+  .voice-opt .v-desc { font-size: 10px; color: var(--text-secondary); margin-top: 1px; }
+  .voice-actions {
+    display: flex;
+    gap: 10px;
+  }
+  .voice-actions button {
+    flex: 1;
+    border: none;
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #6a7bf5 0%, #a855f7 100%);
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(106,123,245,0.45);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(106,123,245,0.55); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-ghost {
+    background: var(--glass-strong);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { color: #fff; border-color: var(--primary); }
+  .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ===== 结果区（三栏：波形 + 两个识别结果） ===== */
+  .result-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+  }
+  /* 顶部波形卡片（横跨整栏） */
+  .result-wave-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 20px;
+    flex-shrink: 0;
+  }
+  .result-wave-card .wave-head {
+    margin-bottom: 10px;
+  }
+  #resultWaveCanvas {
+    width: 100%;
+    height: 100px;
+    display: block;
+    background: rgba(255,255,255,0.06);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  /* 下方两个识别结果并排 */
+  .result-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    flex: 1;
+  }
+  .result-list { display: contents; }
+  .result-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+  }
+  .result-box.highlight {
+    background: linear-gradient(135deg, rgba(52,211,153,0.22) 0%, rgba(52,211,153,0.10) 100%);
+    border-color: rgba(110,231,183,0.5);
+  }
+  .result-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .result-step {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e1b4b;
+    border-radius: 8px;
+    padding: 3px 10px;
+    background: #c7d2fe;
+  }
+  .result-box.highlight .result-step { background: #6ee7b7; color: #064e3b; }
+  .result-label { font-size: 14px; font-weight: 700; color: #ffffff; }
+  .result-time {
+    font-size: 11px;
+    font-weight: 600;
+    color: #e0e7ff;
+    margin-left: auto;
+    background: rgba(139,156,255,0.22);
+    border: 1px solid rgba(139,156,255,0.5);
+    border-radius: 20px;
+    padding: 3px 10px;
+  }
+  .result-text {
+    font-size: 22px;
+    color: var(--text);
+    line-height: 1.7;
+    font-weight: 500;
+    word-break: break-word;
+  }
+  .result-text.placeholder { color: var(--text-secondary); font-size: 15px; font-weight: 400; }
+  .token-info {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(110,231,183,0.4);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+  }
+  .token-info .tag {
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.30);
+    border-radius: 6px;
+    padding: 2px 8px;
+    color: #e0e7ff;
+  }
+  .token-info .tag.warn {
+    background: rgba(251,191,36,0.24);
+    border-color: rgba(251,191,36,0.6);
+    color: #fde68a;
+  }
+
+  /* ===== 播放 & 下载 ===== */
+  .playback {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+  .play-btn {
+    background: var(--primary-soft);
+    color: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .play-btn:hover { background: var(--primary); color: #fff; }
+  #playAudio { flex: 1; height: 40px; display: none; min-width: 140px; filter: invert(0.85); }
+
+  .footer {
+    max-width: 1600px;
+    margin: 28px auto 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+  .footer .sep { margin: 0 8px; color: var(--border); }
+  .status {
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-align: center;
+    min-height: 20px;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand-logo">🎙️</div>
+    <div class="brand-title">
+      <h1>语音识别 · 变声工坊</h1>
+      <p>说话即所得 · ASR 识别 + 大模型纠错 + 变声特效</p>
+    </div>
+    <div class="brand-status">
+      <span class="dot"></span>
+      <span id="engineStatus">引擎就绪</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- 左栏：录音 + 变声 -->
+    <div class="panel">
+      <div class="panel-title">
+        🎤 录音控制
+        <span class="badge">实时</span>
+      </div>
+
+      <div class="setting-row">
+        <span class="icon">🎙️</span>
+        <label>麦克风</label>
+        <select id="deviceSelect">
+          <option value="">正在获取设备...</option>
+        </select>
+        <button class="mini-btn" id="refreshBtn">刷新</button>
+      </div>
+
+      <div class="setting-row">
+        <span class="icon">✨</span>
+        <label>纠错方式</label>
+        <select id="correctMode">
+          <option value="15b">本地 · 1.5B（错别字纠错，离线）</option>
+          <option value="local">本地 · MacBERT（错别字，最快）</option>
+          <option value="llm">云端 · AI 大模型（断句+语义整理）</option>
+        </select>
+      </div>
+
+      <!-- AI 辅助配置（云端纠错时使用） -->
+      <div class="ai-config" id="aiConfig">
+        <div class="ai-config-head">
+          <span class="ai-config-title">🤖 AI 辅助配置</span>
+          <button class="mini-btn" id="aiConfigToggle">展开</button>
+        </div>
+        <div class="ai-config-body" id="aiConfigBody" style="display:none;">
+          <div class="ai-field">
+            <label>API Key</label>
+            <input type="password" id="apiKeyInput" placeholder="sk-...（不填则用服务器默认）" autocomplete="off">
+          </div>
+          <div class="ai-field">
+            <label>Base URL</label>
+            <input type="text" id="baseUrlInput" placeholder="https://api.deepseek.com" autocomplete="off">
+          </div>
+          <div class="ai-field">
+            <label>模型名</label>
+            <input type="text" id="modelInput" placeholder="deepseek-chat" autocomplete="off">
+          </div>
+          <div class="ai-hint">支持任意 OpenAI 兼容接口（DeepSeek / OpenAI / 通义 / Moonshot…）。配置仅保存在本地浏览器，不会上传。</div>
+        </div>
+      </div>
+
+      <div class="mic-zone">
+        <div class="mic-timer" id="micTimer"></div>
+        <button class="mic-btn" id="micBtn">🎙️</button>
+        <div class="mic-hint" id="micHint">点击开始录音</div>
+      </div>
+      <div class="status" id="status"></div>
+
+      <div class="wave-wrap">
+        <div class="wave-head">
+          <span class="wave-title">实时波形</span>
+          <span class="wave-badge" id="waveBadge">待录音</span>
+        </div>
+        <canvas id="waveCanvas" width="520" height="110"></canvas>
+      </div>
+
+      <div class="voice-panel">
+        <div class="voice-panel-title">🎚️ 变声特效 <span style="color:var(--text-secondary);font-weight:400;font-size:11px;">（录音后处理）</span></div>
+        <div class="voice-grid">
+          <div class="voice-opt active" data-voice="normal">
+            <span class="v-icon">🎵</span>
+            <div class="v-name">原声</div>
+            <div class="v-desc">不做处理</div>
+          </div>
+          <div class="voice-opt" data-voice="chipmunk">
+            <span class="v-icon">🐿️</span>
+            <div class="v-name">花栗鼠</div>
+            <div class="v-desc">音调升高 1.5x</div>
+          </div>
+          <div class="voice-opt" data-voice="deep">
+            <span class="v-icon">🦍</span>
+            <div class="v-name">大叔音</div>
+            <div class="v-desc">音调降低 0.7x</div>
+          </div>
+          <div class="voice-opt" data-voice="robot">
+            <span class="v-icon">🤖</span>
+            <div class="v-name">机器人</div>
+            <div class="v-desc">机械失真</div>
+          </div>
+          <div class="voice-opt" data-voice="echo">
+            <span class="v-icon">🏔️</span>
+            <div class="v-name">回声</div>
+            <div class="v-desc">山谷混响</div>
+          </div>
+          <div class="voice-opt" data-voice="phone">
+            <span class="v-icon">📞</span>
+            <div class="v-name">电话音</div>
+            <div class="v-desc">窄带滤波</div>
+          </div>
+        </div>
+        <div class="voice-actions">
+          <button class="btn-ghost" id="previewVoiceBtn" disabled>🔊 试听变声</button>
+          <button class="btn-primary" id="downloadVoiceBtn" disabled>⬇️ 下载变声</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右栏：结果 -->
+    <div class="panel">
+      <div class="panel-title">
+        📝 识别结果
+        <span class="badge" style="color:#6ee7b7;background:var(--success-soft);">AI 纠错</span>
+      </div>
+
+      <div class="result-panel">
+        <!-- ① 波形记录（横跨顶部） -->
+        <div class="result-wave-card">
+          <div class="wave-head">
+            <span class="wave-title">📊 波形记录</span>
+            <span class="wave-badge" id="resultWaveBadge">待录音</span>
+          </div>
+          <canvas id="resultWaveCanvas" width="900" height="100"></canvas>
+        </div>
+
+        <!-- ②③ 两个识别结果并排 -->
+        <div class="result-row">
+          <div class="result-box">
+            <div class="result-head">
+              <span class="result-step">①</span>
+              <span class="result-label">原始识别 · ASR</span>
+              <span class="result-time" id="rawTime" style="display:none;"></span>
+            </div>
+            <div class="result-text placeholder" id="resultRaw">等待识别结果…</div>
+          </div>
+          <div class="result-box highlight">
+            <div class="result-head">
+              <span class="result-step">②</span>
+              <span class="result-label" id="correctLabel">纠错结果</span>
+            </div>
+            <div class="result-text placeholder" id="resultCorrected">等待纠错…</div>
+            <div class="token-info" id="tokenInfo" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="playback" id="playback" style="display:none;">
+        <button class="play-btn" id="playRawBtn">▶ 播放录音</button>
+        <audio id="playAudio" controls></audio>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    模型：WeNet Conformer · AISHELL-1<span class="sep">|</span>纠错：本地 1.5B / MacBERT / DeepSeek<span class="sep">|</span>变声：Web Audio 实时处理
+  </div>
+
+<script>
+  // ===== DOM 引用 =====
+  const micBtn = document.getElementById('micBtn');
+  const micHint = document.getElementById('micHint');
+  const micTimer = document.getElementById('micTimer');
+  const statusEl = document.getElementById('status');
+  const resultRawEl = document.getElementById('resultRaw');
+  const resultCorrectedEl = document.getElementById('resultCorrected');
+  const rawTimeEl = document.getElementById('rawTime');
+  const tokenInfoEl = document.getElementById('tokenInfo');
+  const playbackEl = document.getElementById('playback');
+  const playRawBtn = document.getElementById('playRawBtn');
+  const playAudio = document.getElementById('playAudio');
+  const deviceSelect = document.getElementById('deviceSelect');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const correctMode = document.getElementById('correctMode');
+  const correctLabel = document.getElementById('correctLabel');
+  const waveCanvas = document.getElementById('waveCanvas');
+  const waveCtx = waveCanvas.getContext('2d');
+  const waveBadge = document.getElementById('waveBadge');
+  const resultWaveCanvas = document.getElementById('resultWaveCanvas');
+  const resultWaveCtx = resultWaveCanvas.getContext('2d');
+  const resultWaveBadge = document.getElementById('resultWaveBadge');
+  const engineStatus = document.getElementById('engineStatus');
+  const previewVoiceBtn = document.getElementById('previewVoiceBtn');
+  const downloadVoiceBtn = document.getElementById('downloadVoiceBtn');
+  const voiceOpts = document.querySelectorAll('.voice-opt');
+  const apiKeyInput = document.getElementById('apiKeyInput');
+  const baseUrlInput = document.getElementById('baseUrlInput');
+  const modelInput = document.getElementById('modelInput');
+  const aiConfigToggle = document.getElementById('aiConfigToggle');
+  const aiConfigBody = document.getElementById('aiConfigBody');
+
+  // ===== AI 辅助配置：localStorage 持久化 + 展开/收起 =====
+  const AI_CONFIG_KEY = 'asr_ai_config';
+  function loadAiConfig() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(AI_CONFIG_KEY) || '{}');
+      apiKeyInput.value = saved.api_key || '';
+      baseUrlInput.value = saved.base_url || '';
+      modelInput.value = saved.model || '';
+    } catch (e) { /* 忽略 */ }
+  }
+  function saveAiConfig() {
+    const cfg = {
+      api_key: apiKeyInput.value.trim(),
+      base_url: baseUrlInput.value.trim(),
+      model: modelInput.value.trim(),
+    };
+    try { localStorage.setItem(AI_CONFIG_KEY, JSON.stringify(cfg)); } catch (e) { /* 忽略 */ }
+  }
+  [apiKeyInput, baseUrlInput, modelInput].forEach(el => {
+    el.addEventListener('change', saveAiConfig);
+    el.addEventListener('input', saveAiConfig);
+  });
+  aiConfigToggle.addEventListener('click', () => {
+    const isHidden = aiConfigBody.style.display === 'none';
+    aiConfigBody.style.display = isHidden ? 'flex' : 'none';
+    aiConfigToggle.textContent = isHidden ? '收起' : '展开';
+    playClickSound('toggle');
+  });
+  loadAiConfig();
+
+  // ===== 点击音效（Web Audio 生成） =====
+  let sfxCtx = null;
+  function playClickSound(kind) {
+    try {
+      if (!sfxCtx) sfxCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = sfxCtx;
+      if (ctx.state === 'suspended') ctx.resume();
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      if (kind === 'toggle' || kind === 'select') {
+        // 清脆"嗒"声
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(kind === 'select' ? 880 : 660, t);
+        osc.frequency.exponentialRampToValueAtTime(kind === 'select' ? 1320 : 990, t + 0.04);
+        gain.gain.setValueAtTime(0.12, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+        osc.start(t);
+        osc.stop(t + 0.09);
+      } else if (kind === 'record') {
+        // 录音开始的"滴"声
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1046, t);
+        gain.gain.setValueAtTime(0.15, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        osc.start(t);
+        osc.stop(t + 0.13);
+      } else if (kind === 'stop') {
+        // 录音结束的"嗒"声（降调）
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(784, t);
+        osc.frequency.exponentialRampToValueAtTime(0.001, t + 0.12);
+        gain.gain.setValueAtTime(0.15, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        osc.start(t);
+        osc.stop(t + 0.13);
+      } else {
+        // 通用轻"嗒"
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(700, t);
+        gain.gain.setValueAtTime(0.10, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+        osc.start(t);
+        osc.stop(t + 0.07);
+      }
+    } catch (e) { /* 忽略音效错误 */ }
+  }
+  // 给所有可点击元素绑定音效
+  document.querySelectorAll('button, .voice-opt, select').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (el.classList.contains('voice-opt')) playClickSound('select');
+      else if (el.tagName === 'SELECT') playClickSound('select');
+      else playClickSound('toggle');
+    });
+  });
+
+  // ===== 状态 =====
+  let mediaRecorder = null;
+  let chunks = [];
+  let isRecording = false;
+  let recordStartTime = 0;
+  let timerInterval = null;
+  let rawAudioUrl = null;
+  let rawAudioBlob = null;
+  let rawAudioBuf = null;         // 解码后的原始音频 AudioBuffer
+  let selectedDeviceId = null;
+  let currentPlaying = null;
+  let audioCtx = null;
+  let analyser = null;
+  let analyserData = null;
+  let waveAnimationId = null;
+  let currentStream = null;
+  let selectedVoice = 'normal';
+
+  // ===== 设备枚举 =====
+  async function refreshDevices() {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const inputs = devices.filter(d => d.kind === 'audioinput');
+      deviceSelect.innerHTML = '';
+      if (inputs.length === 0) {
+        deviceSelect.innerHTML = '<option value="">未找到麦克风设备</option>';
+        return;
+      }
+      inputs.forEach((d, i) => {
+        if (d.deviceId === 'default' || d.deviceId === '') return;
+        const label = d.label || ('麦克风设备 ' + (i + 1));
+        const opt = document.createElement('option');
+        opt.value = d.deviceId;
+        opt.textContent = label;
+        deviceSelect.appendChild(opt);
+      });
+      if (selectedDeviceId && [...deviceSelect.options].some(o => o.value === selectedDeviceId)) {
+        deviceSelect.value = selectedDeviceId;
+      } else {
+        deviceSelect.value = deviceSelect.options[0] ? deviceSelect.options[0].value : '';
+        selectedDeviceId = deviceSelect.value;
+      }
+      deviceSelect.onchange = () => {
+        selectedDeviceId = deviceSelect.value;
+        statusEl.textContent = '已切换麦克风：' + (deviceSelect.options[deviceSelect.selectedIndex].textContent);
+      };
+    } catch (err) {
+      deviceSelect.innerHTML = '<option value="">无法获取设备（需授权麦克风权限）</option>';
+    }
+  }
+  refreshBtn.addEventListener('click', refreshDevices);
+  refreshDevices();
+
+  // ===== 变声选择 =====
+  voiceOpts.forEach(opt => {
+    opt.addEventListener('click', () => {
+      voiceOpts.forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      selectedVoice = opt.dataset.voice;
+    });
+  });
+
+  // ===== 录音 =====
+  micBtn.addEventListener('click', async () => {
+    if (isRecording) {
+      const elapsed = (Date.now() - recordStartTime) / 1000;
+      playClickSound('stop');
+      mediaRecorder.stop();
+      isRecording = false;
+      micBtn.textContent = '🎙️';
+      micBtn.classList.remove('recording');
+      micHint.textContent = '点击开始录音';
+      micHint.classList.remove('recording');
+      micTimer.textContent = '';
+      if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+      if (waveAnimationId) { cancelAnimationFrame(waveAnimationId); waveAnimationId = null; }
+      if (elapsed < 0.6) {
+        statusEl.textContent = '录音太短，请说完整一句话再停止';
+        resetResults();
+        return;
+      }
+      statusEl.textContent = '正在识别…';
+      return;
+    }
+    try {
+      playClickSound('record');
+      const constraints = { audio: true };
+      if (selectedDeviceId) {
+        constraints.audio = { deviceId: { exact: selectedDeviceId } };
+      }
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      currentStream = stream;
+      mediaRecorder = new MediaRecorder(stream);
+      chunks = [];
+
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioCtx.createMediaStreamSource(stream);
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        analyser.smoothingTimeConstant = 0.6;
+        source.connect(analyser);
+        analyserData = new Uint8Array(analyser.fftSize);
+        waveBadge.textContent = '录音中';
+        waveBadge.className = 'wave-badge live';
+        startRealtimeWave();
+      } catch (e) {
+        console.warn('analyser setup failed', e);
+      }
+
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        if (waveAnimationId) { cancelAnimationFrame(waveAnimationId); waveAnimationId = null; }
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        rawAudioBlob = blob;
+        if (rawAudioUrl) URL.revokeObjectURL(rawAudioUrl);
+        rawAudioUrl = URL.createObjectURL(blob);
+        playAudio.src = rawAudioUrl;
+        playAudio.style.display = 'block';
+        playbackEl.style.display = 'flex';
+        playRawBtn.textContent = '▶ 播放录音';
+        // 解码音频供波形绘制和变声处理
+        try {
+          const arrayBuffer = await blob.arrayBuffer();
+          const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
+          rawAudioBuf = await tempCtx.decodeAudioData(arrayBuffer);
+          tempCtx.close();
+        } catch (e) {
+          console.warn('decode audio failed', e);
+        }
+        // 启用变声按钮
+        previewVoiceBtn.disabled = false;
+        downloadVoiceBtn.disabled = false;
+        await sendAudio(blob);
+      };
+      mediaRecorder.start();
+      isRecording = true;
+      recordStartTime = Date.now();
+      micBtn.textContent = '⏹';
+      micBtn.classList.add('recording');
+      micHint.textContent = '录音中… 点击停止';
+      micHint.classList.add('recording');
+      statusEl.textContent = '';
+      resetResults();
+      timerInterval = setInterval(() => {
+        const s = ((Date.now() - recordStartTime) / 1000).toFixed(1);
+        micTimer.textContent = s + 's';
+      }, 100);
+    } catch (err) {
+      statusEl.textContent = '无法访问麦克风：' + err.message;
+    }
+  });
+
+  function resetResults() {
+    resultRawEl.textContent = '等待识别结果…';
+    resultRawEl.classList.add('placeholder');
+    resultCorrectedEl.textContent = '等待纠错…';
+    resultCorrectedEl.classList.add('placeholder');
+    rawTimeEl.style.display = 'none';
+    tokenInfoEl.style.display = 'none';
+    // 清空右栏大波形
+    if (resultWaveCtx) {
+      resultWaveCtx.clearRect(0, 0, resultWaveCanvas.width, resultWaveCanvas.height);
+    }
+    resultWaveBadge.textContent = '待录音';
+    resultWaveBadge.className = 'wave-badge';
+  }
+
+  // ===== 变声处理（Web Audio） =====
+  function applyVoiceEffect(audioBuf, voice) {
+    const sr = audioBuf.sampleRate;
+    const duration = audioBuf.duration;
+    const numCh = audioBuf.numberOfChannels;
+
+    if (voice === 'normal') {
+      return null; // 原声直接返回 null，由 processVoice 直接返回原始 buffer
+    }
+
+    // 音调变换：playbackRate 改变音调，输出时长随之变化
+    let playbackRate = 1.0;
+    if (voice === 'chipmunk') playbackRate = 1.5;   // 音调升、语速快、时长变短
+    else if (voice === 'deep') playbackRate = 0.7;  // 音调降、语速慢、时长变长
+
+    const outDur = duration / playbackRate;
+    const outLen = Math.max(1, Math.ceil(outDur * sr));
+
+    const offline = new OfflineAudioContext(numCh, outLen, sr);
+    const source = offline.createBufferSource();
+    source.buffer = audioBuf;
+    source.playbackRate.value = playbackRate;
+
+    let node = source;
+
+    if (voice === 'robot') {
+      // 失真（tanh 过载）+ 高通，产生机械音
+      const shaper = offline.createWaveShaper();
+      const curve = new Float32Array(256);
+      for (let i = 0; i < 256; i++) {
+        const x = (i / 128) - 1;
+        curve[i] = Math.tanh(x * 2.5);
+      }
+      shaper.curve = curve;
+      shaper.oversample = '4x';
+      const hp = offline.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 250;
+      node.connect(shaper);
+      shaper.connect(hp);
+      node = hp;
+    }
+
+    if (voice === 'echo') {
+      // 回声/混响：延迟 + 反馈
+      const delay = offline.createDelay(2.0);
+      delay.delayTime.value = 0.32;
+      const feedback = offline.createGain();
+      feedback.gain.value = 0.45;
+      const wet = offline.createGain();
+      wet.gain.value = 0.55;
+      const dry = offline.createGain();
+      dry.gain.value = 1.0;
+      const mix = offline.createGain();
+      mix.gain.value = 1.0;
+      node.connect(delay);
+      delay.connect(feedback);
+      feedback.connect(delay);
+      delay.connect(wet);
+      node.connect(dry);
+      dry.connect(mix);
+      wet.connect(mix);
+      node = mix;
+    }
+
+    if (voice === 'phone') {
+      // 电话音：高通 300Hz + 低通 3400Hz（窄带）
+      const hp = offline.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 300;
+      const lp = offline.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 3400;
+      node.connect(hp);
+      hp.connect(lp);
+      node = lp;
+    }
+
+    node.connect(offline.destination);
+    source.start(0);
+    return offline;
+  }
+
+  async function processVoice() {
+    if (!rawAudioBuf) {
+      statusEl.textContent = '请先录音';
+      return null;
+    }
+    if (selectedVoice === 'normal') return rawAudioBuf; // 原声
+    const offline = applyVoiceEffect(rawAudioBuf, selectedVoice);
+    if (!offline) return rawAudioBuf;
+    return await offline.startRendering();
+  }
+
+  // ===== 试听变声 =====
+  previewVoiceBtn.addEventListener('click', async () => {
+    try {
+      statusEl.textContent = '正在生成变声…';
+      const rendered = await processVoice();
+      if (!rendered) return;
+      // 转成 wav blob 播放
+      const wavBlob = audioBufferToWav(rendered);
+      const url = URL.createObjectURL(wavBlob);
+      const tempAudio = new Audio(url);
+      tempAudio.play();
+      tempAudio.onended = () => URL.revokeObjectURL(url);
+      statusEl.textContent = '变声预览播放中（' + getVoiceName(selectedVoice) + '）';
+    } catch (err) {
+      statusEl.textContent = '变声处理失败：' + err.message;
+    }
+  });
+
+  // ===== 下载变声 =====
+  downloadVoiceBtn.addEventListener('click', async () => {
+    try {
+      statusEl.textContent = '正在生成变声…';
+      const rendered = await processVoice();
+      if (!rendered) return;
+      const wavBlob = audioBufferToWav(rendered);
+      const url = URL.createObjectURL(wavBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '变声_' + getVoiceName(selectedVoice) + '_' + Date.now() + '.wav';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      statusEl.textContent = '已下载变声音频';
+    } catch (err) {
+      statusEl.textContent = '变声处理失败：' + err.message;
+    }
+  });
+
+  function getVoiceName(v) {
+    const map = {
+      'normal': '原声', 'chipmunk': '花栗鼠', 'deep': '大叔音',
+      'robot': '机器人', 'echo': '回声', 'phone': '电话音'
+    };
+    return map[v] || v;
+  }
+
+  // ===== 纠错 label =====
+  function updateCorrectLabel() {
+    const labelMap = {
+      '15b': '本地纠错 · 1.5B（错别字，离线）',
+      'local': '本地纠错 · MacBERT（错别字，最快）',
+      'llm': '云端整理 · DeepSeek（断句+语义）',
+    };
+    correctLabel.textContent = labelMap[correctMode.value] || '纠错结果';
+  }
+  correctMode.addEventListener('change', updateCorrectLabel);
+  updateCorrectLabel();
+
+  // ===== 波形 =====
+  function startRealtimeWave() {
+    function draw() {
+      waveAnimationId = requestAnimationFrame(draw);
+      if (!analyser) return;
+      analyser.getByteTimeDomainData(analyserData);
+      const w = waveCanvas.width;
+      const h = waveCanvas.height;
+      waveCtx.clearRect(0, 0, w, h);
+      waveCtx.lineWidth = 2;
+      waveCtx.strokeStyle = '#a5b4fc';
+      waveCtx.beginPath();
+      const slice = analyserData.length;
+      const step = w / slice;
+      for (let i = 0; i < slice; i++) {
+        const v = analyserData[i] / 128.0;
+        const y = (v * h) / 2;
+        if (i === 0) waveCtx.moveTo(0, y);
+        else waveCtx.lineTo(i * step, y);
+      }
+      waveCtx.stroke();
+      waveCtx.strokeStyle = 'rgba(255,255,255,0.14)';
+      waveCtx.lineWidth = 1;
+      waveCtx.beginPath();
+      waveCtx.moveTo(0, h / 2);
+      waveCtx.lineTo(w, h / 2);
+      waveCtx.stroke();
+    }
+    draw();
+  }
+
+  function drawRecordedWave(audioBuf) {
+    waveBadge.textContent = '已录音';
+    waveBadge.className = 'wave-badge done';
+    resultWaveBadge.textContent = '已录音';
+    resultWaveBadge.className = 'wave-badge done';
+    const data = audioBuf.getChannelData(0);
+    // 左栏小波形
+    drawWaveform(waveCtx, waveCanvas.width, waveCanvas.height, data, '#6ee7b7');
+    // 右栏大波形
+    drawWaveform(resultWaveCtx, resultWaveCanvas.width, resultWaveCanvas.height, data, '#fbbf24');
+  }
+
+  function drawWaveform(ctx, w, h, data, color) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = color;
+    const step = Math.max(1, Math.floor(data.length / w));
+    ctx.beginPath();
+    for (let x = 0; x < w; x++) {
+      const start = x * step;
+      let min = 1, max = -1;
+      for (let j = 0; j < step && (start + j) < data.length; j++) {
+        const v = data[start + j];
+        if (v < min) min = v;
+        if (v > max) max = v;
+      }
+      const y1 = (1 - max) * h / 2;
+      const y2 = (1 - min) * h / 2;
+      if (x === 0) { ctx.moveTo(x, y1); ctx.lineTo(x, y2); }
+      else { ctx.lineTo(x, y1); ctx.lineTo(x, y2); }
+    }
+    ctx.stroke();
+    // 中线
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, h / 2);
+    ctx.lineTo(w, h / 2);
+    ctx.stroke();
+  }
+
+  // ===== 上传识别 =====
+  async function sendAudio(blob) {
+    try {
+      const arrayBuffer = await blob.arrayBuffer();
+      const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const audioBuf = await decodeCtx.decodeAudioData(arrayBuffer);
+      decodeCtx.close();
+
+      drawRecordedWave(audioBuf);
+
+      const wavBlob = audioBufferToWav(audioBuf);
+
+      const mode = correctMode.value;
+      const endpointMap = { '15b': '/recognize_15b', 'local': '/recognize_local', 'llm': '/recognize_llm' };
+      const endpoint = endpointMap[mode] || '/recognize_15b';
+
+      // 构造请求头：云端纠错时带上用户填写的 AI 配置
+      const headers = { 'Content-Type': 'audio/wav' };
+      if (mode === 'llm') {
+        const cfg = JSON.parse(localStorage.getItem(AI_CONFIG_KEY) || '{}');
+        if (cfg.api_key) headers['X-Api-Key'] = cfg.api_key;
+        if (cfg.base_url) headers['X-Base-Url'] = cfg.base_url;
+        if (cfg.model) headers['X-Model'] = cfg.model;
+      }
+
+      const resp = await fetchWithTimeout(endpoint, {
+        method: 'POST',
+        headers: headers,
+        body: wavBlob,
+      }, 60000);
+      const data = await resp.json();
+
+      if (data.error) {
+        resultRawEl.textContent = '识别出错：' + data.error;
+        resultRawEl.classList.remove('placeholder');
+        resultCorrectedEl.textContent = '—';
+        resultCorrectedEl.classList.add('placeholder');
+        tokenInfoEl.style.display = 'none';
+        statusEl.textContent = '识别失败';
+        return;
+      }
+
+      // ① 原始 ASR
+      if (data.raw_text) {
+        resultRawEl.textContent = data.raw_text;
+        resultRawEl.classList.remove('placeholder');
+        rawTimeEl.style.display = 'inline-block';
+        rawTimeEl.textContent = (data.raw_time || '') + 's';
+      } else {
+        resultRawEl.textContent = '（未识别出内容）';
+        resultRawEl.classList.remove('placeholder');
+      }
+
+      // ② 纠错结果
+      const errFieldMap = { '15b': data.correction_error, 'local': data.csc_error, 'llm': data.llm_error };
+      const metaFieldMap = { '15b': data.correction_meta, 'local': data.csc_meta, 'llm': data.llm_meta };
+      const errField = errFieldMap[mode];
+      const metaField = metaFieldMap[mode];
+
+      if (errField) {
+        resultCorrectedEl.textContent = '纠错失败：' + errField;
+        resultCorrectedEl.classList.remove('placeholder');
+        tokenInfoEl.style.display = 'none';
+      } else if (data.corrected_text) {
+        resultCorrectedEl.textContent = data.corrected_text;
+        resultCorrectedEl.classList.remove('placeholder');
+      } else {
+        resultCorrectedEl.textContent = '（无内容可纠错）';
+        resultCorrectedEl.classList.remove('placeholder');
+      }
+
+      // 元信息
+      if (mode === 'llm' && metaField && metaField.usage) {
+        const u = metaField.usage;
+        const model = metaField.model || 'deepseek';
+        tokenInfoEl.style.display = 'flex';
+        tokenInfoEl.innerHTML =
+          '<span class="tag">模型 ' + model + '</span>' +
+          '<span class="tag">输入 ' + (u.prompt_tokens ?? '-') + ' tok</span>' +
+          '<span class="tag">输出 ' + (u.completion_tokens ?? '-') + ' tok</span>' +
+          '<span class="tag">合计 ' + (u.total_tokens ?? '-') + ' tok</span>';
+      } else if ((mode === 'local' || mode === '15b') && metaField) {
+        const model = metaField.model || '本地模型';
+        const elapsed = metaField.elapsed !== undefined ? metaField.elapsed + 's' : '';
+        const fallback = metaField.fallback ? '<span class="tag warn">没把握，已保留原文</span>' : '';
+        tokenInfoEl.style.display = 'flex';
+        tokenInfoEl.innerHTML =
+          '<span class="tag">模型 ' + model + '</span>' +
+          '<span class="tag">本地离线 · 免费</span>' +
+          (elapsed ? '<span class="tag">耗时 ' + elapsed + '</span>' : '') +
+          fallback;
+      } else {
+        tokenInfoEl.style.display = 'none';
+      }
+
+      statusEl.textContent = '识别完成';
+    } catch (err) {
+      statusEl.textContent = '上传/识别失败：' + err.message;
+    }
+  }
+
+  function audioBufferToWav(buffer) {
+    const numCh = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const len = buffer.length;
+    const bytesPerSample = 2;
+    const dataSize = len * numCh * bytesPerSample;
+    const arrBuf = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(arrBuf);
+    writeStr(view, 0, 'RIFF');
+    view.setUint32(4, 36 + dataSize, true);
+    writeStr(view, 8, 'WAVE');
+    writeStr(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numCh, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * numCh * bytesPerSample, true);
+    view.setUint16(32, numCh * bytesPerSample, true);
+    view.setUint16(34, 16, true);
+    writeStr(view, 36, 'data');
+    view.setUint32(40, dataSize, true);
+    let offset = 44;
+    for (let i = 0; i < len; i++) {
+      for (let ch = 0; ch < numCh; ch++) {
+        const sample = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
+        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+        offset += 2;
+      }
+    }
+    return new Blob([arrBuf], { type: 'audio/wav' });
+  }
+
+  function writeStr(view, offset, str) {
+    for (let i = 0; i < str.length; i++) {
+      view.setUint8(offset + i, str.charCodeAt(i));
+    }
+  }
+
+  function fetchWithTimeout(url, options, ms) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('识别超时')), ms);
+      fetch(url, options).then(res => {
+        clearTimeout(timer);
+        resolve(res);
+      }).catch(err => {
+        clearTimeout(timer);
+        reject(err);
+      });
+    });
+  }
+
+  playRawBtn.addEventListener('click', () => {
+    if (currentPlaying === 'raw' && !playAudio.paused) {
+      playAudio.pause();
+      playRawBtn.textContent = '▶ 播放录音';
+      currentPlaying = null;
+      return;
+    }
+    playAudio.src = rawAudioUrl;
+    playAudio.play();
+    currentPlaying = 'raw';
+    playRawBtn.textContent = '⏸ 暂停';
+  });
+
+  playAudio.addEventListener('ended', () => {
+    playRawBtn.textContent = '▶ 播放录音';
+    currentPlaying = null;
+  });
+</script>
+</body>
+</html>

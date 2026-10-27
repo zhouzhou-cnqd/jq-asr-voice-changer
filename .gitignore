@@ -1,0 +1,42 @@
+# ===== 敏感配置（含 API key，勿提交） =====
+config.json
+
+# ===== 模型权重 =====
+# ASR 权重（asr_model_epoch99/，约190MB）通过 Git LFS 提交，见 .gitattributes
+# 旧版 epoch_35 备份，不提交
+asr_model_epoch35/
+# 大文件 tar 包
+*.tar.gz
+# 本地纠错模型（4GB+），需自行下载
+models/
+
+# ===== 运行时产物 =====
+recordings/
+*.log
+server.log
+__pycache__/
+*.pyc
+
+# ===== 编辑器 / 系统 =====
+.workbuddy/
+.playwright-cli/
+.vscode/
+.idea/
+.DS_Store
+
+# ===== Python =====
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# ===== 测试音频（含个人语音） =====
+test_audio.wav
+*.wav
+
+# ===== 服务器训练辅助脚本（含用户名/路径，非本项目内容） =====
+aishell_wenet_*.sh
+check_ckpt_clean.py
+patch_train_utils.py
+decode.yaml
+*.bak
