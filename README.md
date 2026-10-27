@@ -16,15 +16,14 @@
 
 ## ✨ 功能特性
 
-| 模块 | 说明 |
+| 分类 | 功能 |
 |---|---|
-| **语音识别（ASR）** | WeNet Conformer，`attention_rescoring` 解码（CTC 前缀束搜索 + attention 重打分） |
-| **本地纠错 · 1.5B** | `chinese-text-correction-1.5b`（Qwen2.5 基座），字词级错别字/同音字纠错，离线免费 |
-| **本地纠错 · MacBERT** | `macbert4csc-base-chinese`，最快，仅做轻量错别字兜底 |
-| **云端纠错 · AI 大模型** | 任意 OpenAI 兼容接口（DeepSeek / OpenAI / 通义 / Moonshot…），做断句、补标点、口语整理的**语义级整理** |
-| **变声特效** | 纯前端 Web Audio：花栗鼠、大叔音、机器人、回声、电话音，可试听/下载 |
-| **实时波形** | 录音中实时波形 + 录音后波形回放 |
-| **玻璃磨砂 UI** | 半透明琉璃磨砂质感 + 点击音效，横向双栏布局 |
+| 🎤 **语音识别** | WeNet Conformer，`attention_rescoring` 解码（CTC 前缀束搜索 + attention 重打分） |
+| ✏️ **本地纠错** | 1.5B 错别字/同音字纠错（离线）+ MacBERT 轻量兜底 |
+| ☁️ **云端纠错** | 任意 OpenAI 兼容接口（DeepSeek / OpenAI / 通义 / Moonshot…），断句 + 补标点 + 语义整理 |
+| 🎚️ **变声特效** | 纯前端 Web Audio：花栗鼠、大叔音、机器人、回声、电话音，可试听/下载 |
+| 📊 **实时波形** | 录音中实时波形 + 录音后波形回放 |
+| 🎨 **界面体验** | 玻璃磨砂质感、点击音效、横向双栏布局 |
 
 ## 📸 界面演示
 
