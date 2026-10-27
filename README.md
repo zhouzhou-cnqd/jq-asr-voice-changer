@@ -81,8 +81,18 @@ ASR 权重已通过 **Git LFS** 随仓库一起提交（`asr_model_epoch99/final
 
 ### 2. 本地纠错模型（需自行下载，体积大未入库）
 
-- **MacBERT CSC**（`models/macbert4csc/`）：[shibing624/macbert4csc-base-chinese](https://huggingface.co/shibing624/macbert4csc-base-chinese)
+两个本地纠错模型均来自 [pycorrector](https://github.com/shibing624/pycorrector) 项目（作者 **shibing624**），均为 **Apache-2.0** 许可：
+
 - **1.5B 纠错**（`models/chinese-text-correction-1.5b/`）：[shibing624/chinese-text-correction-1.5b](https://huggingface.co/shibing624/chinese-text-correction-1.5b)
+  - 基座模型：`Qwen/Qwen2.5-1.5B-Instruct`
+  - 规模：约 15.4 亿参数，架构 `Qwen2ForCausalLM`
+  - 训练数据：[shibing624/chinese_text_correction](https://huggingface.co/datasets/shibing624/chinese_text_correction)（中文错别字/同音字纠错对）
+  - 能力：字词级中文拼写纠错（CSC/CTC），离线推理
+
+- **MacBERT CSC**（`models/macbert4csc/`）：[shibing624/macbert4csc-base-chinese](https://huggingface.co/shibing624/macbert4csc-base-chinese)
+  - 基座模型：MacBERT（BERT 变体），约 1.02 亿参数
+  - 训练数据：SIGHAN13/14/15 + Wang271K 中文纠错数据集（约 27 万条）
+  - 能力：轻量错别字兜底，速度最快，SIGHAN2015 测试集字符级 F1 达 89.91%
 
 ## 🚀 使用
 
