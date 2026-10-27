@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>语音识别 · 变声工坊</title>
+<style>
+  :root {
+    --primary: #8b9cff;
+    --primary-2: #c084fc;
+    --primary-hover: #6a7bf5;
+    --primary-soft: rgba(139,156,255,0.20);
+    --success: #34d399;
+    --success-soft: rgba(52,211,153,0.20);
+    --danger: #f87171;
+    --text: #ffffff;
+    --text-secondary: rgba(255,255,255,0.88);
+    --text-muted: rgba(255,255,255,0.66);
+    --border: rgba(255,255,255,0.24);
+    --bg: rgba(255,255,255,0.10);
+    --card: rgba(255,255,255,0.12);
+    --glass: rgba(255,255,255,0.12);
+    --glass-strong: rgba(255,255,255,0.20);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background:
+      radial-gradient(1200px 700px at 12% -12%, rgba(99,102,241,0.55), transparent 60%),
+      radial-gradient(1100px 650px at 88% 8%, rgba(168,85,247,0.48), transparent 58%),
+      radial-gradient(900px 700px at 50% 110%, rgba(34,197,94,0.30), transparent 60%),
+      linear-gradient(160deg, #1e1b4b 0%, #312e81 40%, #4c1d95 100%);
+    min-height: 100vh;
+    padding: 32px 24px;
+    color: var(--text);
+    position: relative;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    width: 480px; height: 480px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(168,85,247,0.35), transparent 70%);
+    top: -120px; left: -120px;
+    filter: blur(60px);
+    pointer-events: none;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    width: 560px; height: 560px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(34,197,94,0.25), transparent 70%);
+    bottom: -180px; right: -120px;
+    filter: blur(80px);
+    pointer-events: none;
+  }
+
+  .topbar {
+    max-width: 1500px;
+    margin: 0 auto 24px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .brand-logo {
+    width: 52px; height: 52px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #6a7bf5 0%, #8b5cf6 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    box-shadow: 0 10px 24px rgba(91,108,240,0.35);
+    flex-shrink: 0;
+  }
+  .brand-title h1 {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    background: linear-gradient(120deg, #c7d2fe 0%, #e9d5ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .brand-title p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 3px;
+  }
+  .brand-status {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #e0e7ff;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+  }
+  .brand-status .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 0 3px rgba(34,193,123,0.18);
+  }
+
+  .main {
+    max-width: 1500px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 22px;
+    align-items: stretch;
+  }
+  .panel {
+    background: var(--glass);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.12);
+    padding: 26px 24px;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .panel-title .badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e1b4b;
+    background: #c7d2fe;
+    border-radius: 6px;
+    padding: 2px 9px;
+  }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+  }
+  .setting-row .icon { font-size: 15px; flex-shrink: 0; }
+  .setting-row label { font-size: 12px; color: var(--text-secondary); flex-shrink: 0; width: 58px; }
+  .setting-row select {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    color: var(--text);
+    padding: 4px 0;
+    cursor: pointer;
+    outline: none;
+    min-width: 0;
+  }
+  .setting-row select option { background: #312e81; color: #fff; }
+  .setting-row .mini-btn {
+    background: var(--glass-strong);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  .ai-config {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+  }
+  .ai-config-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .ai-config-title { font-size: 13px; font-weight: 700; color: #ffffff; }
+
+  .mic-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 0 12px;
+  }
+  .mic-btn {
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 34px;
+    background: linear-gradient(135deg, #6a7bf5 0%, #8b5cf6 100%);
+    box-shadow: 0 14px 34px rgba(91,108,240,0.42);
+    transition: all 0.25s ease;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+    position: relative;
+    color: #fff;
+  }
+  .mic-btn.recording {
+    background: linear-gradient(135deg, #f0575c 0%, #e03a5a 100%);
+    box-shadow: 0 14px 34px rgba(229,72,77,0.45);
+  }
+  .mic-btn.recording::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 3px solid rgba(229,72,77,0.5);
+    animation: ring 1.4s ease-out infinite;
+  }
+  @keyframes ring {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.35); opacity: 0; }
+  }
+  .mic-hint { font-size: 14px; color: var(--text-secondary); font-weight: 600; }
+  .mic-hint.recording { color: var(--danger); }
+  .mic-timer {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--danger);
+    font-variant-numeric: tabular-nums;
+    min-height: 30px;
+    margin-bottom: 2px;
+  }
+  .status { font-size: 13px; color: var(--text-secondary); text-align: center; min-height: 20px; margin-top: 8px; }
+
+  .wave-wrap {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .wave-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .wave-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+  .wave-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: #c7d2fe;
+    background: rgba(139,156,255,0.20);
+    border: 1px solid rgba(139,156,255,0.45);
+    border-radius: 20px;
+    padding: 2px 10px;
+  }
+  .wave-badge.live { color: #fecaca; border-color: rgba(248,113,113,0.6); background: rgba(248,113,113,0.22); }
+  .wave-badge.done { color: #a7f3d0; border-color: rgba(52,211,153,0.6); background: rgba(52,211,153,0.20); }
+  #waveCanvas {
+    width: 100%;
+    height: 72px;
+    display: block;
+    background: rgba(255,255,255,0.06);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .voice-panel {
+    border-top: 1px dashed var(--border);
+    padding-top: 16px;
+    margin-top: 4px;
+  }
+  .voice-panel-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .voice-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .voice-opt {
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 9px 6px;
+    cursor: pointer;
+    text-align: center;
+    user-select: none;
+  }
+  .voice-opt.active { border-color: var(--primary); background: var(--primary-soft); }
+  .voice-opt .v-icon { font-size: 18px; display: block; margin-bottom: 3px; }
+  .voice-opt .v-name { font-size: 12px; font-weight: 700; color: #ffffff; }
+  .voice-opt .v-desc { font-size: 10px; color: var(--text-secondary); margin-top: 1px; }
+  .voice-actions { display: flex; gap: 10px; }
+  .voice-actions button {
+    flex: 1;
+    border: none;
+    border-radius: 12px;
+    padding: 11px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #6a7bf5 0%, #a855f7 100%);
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(106,123,245,0.45);
+  }
+  .btn-ghost { background: var(--glass-strong); color: var(--text-secondary); border: 1px solid var(--border); }
+
+  .result-panel { display: flex; flex-direction: column; gap: 14px; flex: 1; }
+  .result-wave-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 18px;
+    flex-shrink: 0;
+  }
+  .result-wave-card .wave-head { margin-bottom: 10px; }
+  #resultWaveCanvas {
+    width: 100%;
+    height: 90px;
+    display: block;
+    background: rgba(255,255,255,0.06);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .result-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; flex: 1; }
+  .result-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+  }
+  .result-box.highlight {
+    background: linear-gradient(135deg, rgba(52,211,153,0.22) 0%, rgba(52,211,153,0.10) 100%);
+    border-color: rgba(110,231,183,0.5);
+  }
+  .result-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .result-step {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e1b4b;
+    border-radius: 8px;
+    padding: 3px 10px;
+    background: #c7d2fe;
+  }
+  .result-box.highlight .result-step { background: #6ee7b7; color: #064e3b; }
+  .result-label { font-size: 14px; font-weight: 700; color: #ffffff; }
+  .result-time {
+    font-size: 11px;
+    font-weight: 600;
+    color: #e0e7ff;
+    margin-left: auto;
+    background: rgba(139,156,255,0.22);
+    border: 1px solid rgba(139,156,255,0.5);
+    border-radius: 20px;
+    padding: 3px 10px;
+  }
+  .result-text {
+    font-size: 22px;
+    color: var(--text);
+    line-height: 1.7;
+    font-weight: 500;
+    word-break: break-word;
+  }
+  .result-text.placeholder { color: var(--text-secondary); font-size: 15px; font-weight: 400; }
+  .token-info {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(110,231,183,0.4);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+  }
+  .token-info .tag {
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.30);
+    border-radius: 6px;
+    padding: 2px 8px;
+    color: #e0e7ff;
+  }
+  .token-info .tag.warn {
+    background: rgba(251,191,36,0.24);
+    border-color: rgba(251,191,36,0.6);
+    color: #fde68a;
+  }
+  .playback {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  .play-btn {
+    background: var(--primary-soft);
+    color: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .footer {
+    max-width: 1500px;
+    margin: 22px auto 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+  .footer .sep { margin: 0 8px; color: var(--border); }
+
+  /* 光标提示 */
+  .cursor {
+    position: fixed;
+    width: 26px; height: 26px;
+    pointer-events: none;
+    z-index: 9999;
+    transition: left 0.28s cubic-bezier(0.3, 0.9, 0.3, 1), top 0.28s cubic-bezier(0.3, 0.9, 0.3, 1);
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.45));
+  }
+  .cursor svg { width: 100%; height: 100%; display: block; }
+  .cursor.press { transform: scale(0.8); }
+</style>
+</head>
+<body>
+  <div class="cursor" id="cursor">
+    <svg viewBox="0 0 24 24"><path d="M5 3l14 8-6 1.5L10.5 18 9 17l2.2-5L5 9z" fill="#ffffff" stroke="#1e1b4b" stroke-width="1.2"/></svg>
+  </div>
+
+  <div class="topbar">
+    <div class="brand-logo">🎙️</div>
+    <div class="brand-title">
+      <h1>语音识别 · 变声工坊</h1>
+      <p>说话即所得 · ASR 识别 + 大模型纠错 + 变声特效</p>
+    </div>
+    <div class="brand-status">
+      <span class="dot"></span>
+      <span>引擎就绪</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="panel">
+      <div class="panel-title">🎤 录音控制 <span class="badge">实时</span></div>
+      <div class="setting-row">
+        <span class="icon">🎙️</span>
+        <label>麦克风</label>
+        <select><option>默认麦克风</option></select>
+        <button class="mini-btn">刷新</button>
+      </div>
+      <div class="setting-row">
+        <span class="icon">✨</span>
+        <label>纠错方式</label>
+        <select><option>本地 · 1.5B（错别字纠错，离线）</option></select>
+      </div>
+      <div class="ai-config">
+        <div class="ai-config-head">
+          <span class="ai-config-title">🤖 AI 辅助配置</span>
+          <button class="mini-btn">展开</button>
+        </div>
+      </div>
+
+      <div class="mic-zone">
+        <div class="mic-timer" id="micTimer"></div>
+        <button class="mic-btn" id="micBtn">🎙️</button>
+        <div class="mic-hint" id="micHint">点击开始录音</div>
+      </div>
+      <div class="status" id="status"></div>
+
+      <div class="wave-wrap">
+        <div class="wave-head">
+          <span class="wave-title">实时波形</span>
+          <span class="wave-badge" id="waveBadge">待录音</span>
+        </div>
+        <canvas id="waveCanvas" width="500" height="100"></canvas>
+      </div>
+
+      <div class="voice-panel">
+        <div class="voice-panel-title">🎚️ 变声特效 <span style="color:var(--text-secondary);font-weight:400;font-size:11px;">（录音后处理）</span></div>
+        <div class="voice-grid">
+          <div class="voice-opt active"><span class="v-icon">🎵</span><div class="v-name">原声</div><div class="v-desc">不做处理</div></div>
+          <div class="voice-opt"><span class="v-icon">🐿️</span><div class="v-name">花栗鼠</div><div class="v-desc">音调升高 1.5x</div></div>
+          <div class="voice-opt"><span class="v-icon">🦍</span><div class="v-name">大叔音</div><div class="v-desc">音调降低 0.7x</div></div>
+          <div class="voice-opt"><span class="v-icon">🤖</span><div class="v-name">机器人</div><div class="v-desc">机械失真</div></div>
+          <div class="voice-opt"><span class="v-icon">🏔️</span><div class="v-name">回声</div><div class="v-desc">山谷混响</div></div>
+          <div class="voice-opt"><span class="v-icon">📞</span><div class="v-name">电话音</div><div class="v-desc">窄带滤波</div></div>
+        </div>
+        <div class="voice-actions">
+          <button class="btn-ghost">🔊 试听变声</button>
+          <button class="btn-primary">⬇️ 下载变声</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">📝 识别结果 <span class="badge" style="color:#6ee7b7;background:var(--success-soft);">AI 纠错</span></div>
+      <div class="result-panel">
+        <div class="result-wave-card">
+          <div class="wave-head">
+            <span class="wave-title">📊 波形记录</span>
+            <span class="wave-badge" id="resultWaveBadge">待录音</span>
+          </div>
+          <canvas id="resultWaveCanvas" width="900" height="90"></canvas>
+        </div>
+        <div class="result-row">
+          <div class="result-box">
+            <div class="result-head">
+              <span class="result-step">①</span>
+              <span class="result-label">原始识别 · ASR</span>
+              <span class="result-time" id="rawTime" style="display:none;"></span>
+            </div>
+            <div class="result-text placeholder" id="resultRaw">等待识别结果…</div>
+          </div>
+          <div class="result-box highlight">
+            <div class="result-head">
+              <span class="result-step">②</span>
+              <span class="result-label" id="correctLabel">本地纠错 · 1.5B（错别字，离线）</span>
+            </div>
+            <div class="result-text placeholder" id="resultCorrected">等待纠错…</div>
+            <div class="token-info" id="tokenInfo" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="playback" id="playback" style="display:none;">
+        <button class="play-btn">▶ 播放录音</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    模型：WeNet Conformer · AISHELL-1<span class="sep">|</span>纠错：本地 1.5B / MacBERT / DeepSeek<span class="sep">|</span>变声：Web Audio 实时处理
+  </div>
+
+<script>
+  const micBtn = document.getElementById('micBtn');
+  const micHint = document.getElementById('micHint');
+  const micTimer = document.getElementById('micTimer');
+  const statusEl = document.getElementById('status');
+  const resultRawEl = document.getElementById('resultRaw');
+  const resultCorrectedEl = document.getElementById('resultCorrected');
+  const rawTimeEl = document.getElementById('rawTime');
+  const tokenInfoEl = document.getElementById('tokenInfo');
+  const correctLabel = document.getElementById('correctLabel');
+  const waveBadge = document.getElementById('waveBadge');
+  const resultWaveBadge = document.getElementById('resultWaveBadge');
+  const waveCanvas = document.getElementById('waveCanvas');
+  const waveCtx = waveCanvas.getContext('2d');
+  const resultWaveCanvas = document.getElementById('resultWaveCanvas');
+  const resultWaveCtx = resultWaveCanvas.getContext('2d');
+  const playback = document.getElementById('playback');
+  const cursor = document.getElementById('cursor');
+
+  const RAW = '今天天气真的很某';
+  const CORRECTED = '今天天气真的很好';
+
+  // 预绘制的"已录音"波形（模拟真实语音波形）
+  function drawWaveform(ctx, w, h, color, seed) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = color;
+    ctx.beginPath();
+    let phase = seed;
+    for (let x = 0; x < w; x++) {
+      const env = Math.sin(Math.PI * x / w); // 包络
+      const v = Math.sin(x * 0.12 + phase) * 0.5 + Math.sin(x * 0.05 + phase * 2) * 0.3;
+      const amp = 0.15 + 0.75 * env;
+      const y = h / 2 + v * amp * h / 2;
+      if (x === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, h / 2);
+    ctx.lineTo(w, h / 2);
+    ctx.stroke();
+  }
+
+  // 实时跳动波形
+  let waveAnim = null;
+  function startLiveWave() {
+    let t = 0;
+    function draw() {
+      waveAnim = requestAnimationFrame(draw);
+      t += 0.25;
+      const w = waveCanvas.width, h = waveCanvas.height;
+      waveCtx.clearRect(0, 0, w, h);
+      waveCtx.lineWidth = 2;
+      waveCtx.strokeStyle = '#a5b4fc';
+      waveCtx.beginPath();
+      for (let x = 0; x < w; x++) {
+        const env = Math.sin(Math.PI * x / w);
+        const v = Math.sin(x * 0.3 + t) * 0.5 + Math.sin(x * 0.11 + t * 1.7) * 0.4;
+        const y = h / 2 + v * env * h / 2 * 0.8;
+        if (x === 0) waveCtx.moveTo(x, y);
+        else waveCtx.lineTo(x, y);
+      }
+      waveCtx.stroke();
+      waveCtx.strokeStyle = 'rgba(255,255,255,0.14)';
+      waveCtx.lineWidth = 1;
+      waveCtx.beginPath();
+      waveCtx.moveTo(0, h / 2);
+      waveCtx.lineTo(w, h / 2);
+      waveCtx.stroke();
+    }
+    draw();
+  }
+  function stopLiveWave() {
+    if (waveAnim) { cancelAnimationFrame(waveAnim); waveAnim = null; }
+  }
+
+  // 光标移动到指定元素
+  function moveCursorTo(el, press) {
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    cursor.style.left = (cx - 13) + 'px';
+    cursor.style.top = (cy - 13) + 'px';
+    if (press) cursor.classList.add('press');
+    else cursor.classList.remove('press');
+  }
+
+  // 时间轴
+  const timeline = [
+    // [delay_ms, fn]
+    [0, () => moveCursorTo(micBtn, false)],
+    [400, () => moveCursorTo(micBtn, true)],
+    [550, () => {
+      // 开始录音
+      micBtn.classList.add('recording');
+      micBtn.textContent = '⏹';
+      micHint.textContent = '录音中… 点击停止';
+      micHint.classList.add('recording');
+      waveBadge.textContent = '录音中';
+      waveBadge.className = 'wave-badge live';
+      statusEl.textContent = '';
+      startLiveWave();
+      moveCursorTo(micBtn, false);
+    }],
+    [1400, () => { micTimer.textContent = '0.6s'; }],
+    [1900, () => { micTimer.textContent = '1.2s'; }],
+    [2400, () => { micTimer.textContent = '1.8s'; }],
+    [2900, () => { micTimer.textContent = '2.4s'; }],
+    [3200, () => moveCursorTo(micBtn, true)],
+    [3350, () => {
+      // 停止录音
+      stopLiveWave();
+      micBtn.classList.remove('recording');
+      micBtn.textContent = '🎙️';
+      micHint.textContent = '点击开始录音';
+      micHint.classList.remove('recording');
+      micTimer.textContent = '';
+      statusEl.textContent = '正在识别…';
+      moveCursorTo(micBtn, false);
+      // 显示已录音波形
+      waveBadge.textContent = '已录音';
+      waveBadge.className = 'wave-badge done';
+      resultWaveBadge.textContent = '已录音';
+      resultWaveBadge.className = 'wave-badge done';
+      drawWaveform(waveCtx, waveCanvas.width, waveCanvas.height, '#6ee7b7', 1.3);
+      drawWaveform(resultWaveCtx, resultWaveCanvas.width, resultWaveCanvas.height, '#fbbf24', 2.1);
+    }],
+    [3900, () => {
+      // 显示 ASR 结果
+      resultRawEl.textContent = RAW;
+      resultRawEl.classList.remove('placeholder');
+      rawTimeEl.style.display = 'inline-block';
+      rawTimeEl.textContent = '0.32s';
+    }],
+    [4300, () => {
+      // 显示纠错结果
+      resultCorrectedEl.textContent = CORRECTED;
+      resultCorrectedEl.classList.remove('placeholder');
+      tokenInfoEl.style.display = 'flex';
+      tokenInfoEl.innerHTML =
+        '<span class="tag">模型 chinese-text-correction-1.5b</span>' +
+        '<span class="tag">本地离线 · 免费</span>' +
+        '<span class="tag warn">已修正「某」→「好」</span>';
+      playback.style.display = 'flex';
+      statusEl.textContent = '识别完成';
+    }],
+    [5600, () => moveCursorTo(playback.querySelector('.play-btn'), false)],
+  ];
+
+  const params = new URLSearchParams(location.search);
+  if (params.get('autoplay') === '1') {
+    // 初始光标位置（麦克风按钮附近）
+    cursor.style.left = '50%';
+    cursor.style.top = '50%';
+    timeline.forEach(([ms, fn]) => setTimeout(fn, ms));
+    // 完成后停在最后一帧
+    setTimeout(() => {
+      if (window.__demoDone) window.__demoDone();
+    }, 6000);
+  }
+</script>
+</body>
+</html>

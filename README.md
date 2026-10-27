@@ -1,6 +1,16 @@
 # 🎙️ 语音识别 · 变声工坊
 
-一个本地部署的实时语音识别 Web Demo：说话即可转文字，支持本地 AI 纠错与云端大模型语义整理，附带变声特效与琉璃磨砂 UI。
+<div align="center">
+
+一个本地部署的实时语音识别 Web Demo：**说话即所得**，支持本地 AI 纠错与云端大模型语义整理，附带变声特效与琉璃磨砂 UI。
+
+![WeNet](https://img.shields.io/badge/WeNet-Conformer-blue)
+![PyTorch](https://img.shields.io/badge/PyTorch-ASR-red)
+![纠错](https://img.shields.io/badge/纠错-1.5B%20%2F%20MacBERT%20%2F%20DeepSeek-green)
+![License](https://img.shields.io/badge/License-Apache%202.0-lightgrey)
+![Git LFS](https://img.shields.io/badge/权重-Git%20LFS-orange)
+
+</div>
 
 > 基于 [WeNet](https://github.com/wenet-e2e/wenet) 的 Conformer 模型做端到端语音识别（ASR），纯本地 GPU/CPU 推理，数据不出本机。
 
@@ -16,9 +26,19 @@
 | **实时波形** | 录音中实时波形 + 录音后波形回放 |
 | **玻璃磨砂 UI** | 半透明琉璃磨砂质感 + 点击音效，横向双栏布局 |
 
-## 📸 界面截图
+## 📸 界面演示
 
-![界面截图](ui.png)
+<p align="center">
+  <img src="demo.gif" alt="界面演示" width="680">
+</p>
+
+> 完整流程演示：点击录音 → 实时波形 → ASR 识别「今天天气真的很某」→ 本地 1.5B 纠错「今天天气真的很好」。
+
+**界面截图：**
+
+<p align="center">
+  <img src="ui.png" alt="界面截图" width="760">
+</p>
 
 ## 🧭 目录结构
 
@@ -29,7 +49,7 @@
 ├── config.example.json     # 配置模板（复制为 config.json 填写）
 ├── infer.py                # 命令行单条识别脚本
 ├── wenet_local/            # 本地 WeNet 包
-├── asr_model_epoch99/      # ASR 模型权重（需自行下载，见下文）
+├── asr_model_epoch99/      # ASR 模型权重（已通过 Git LFS 提交）
 │   ├── final.pt            #   Conformer 权重
 │   ├── train.yaml          #   模型配置
 │   ├── units.txt           #   字表
@@ -56,7 +76,9 @@ pip install torch numpy scipy transformers
 
 本项目的 ASR 模型是 WeNet 的 **Conformer**，采用 **CTC/Attention 联合架构**（Joint CTC/Attention），解码时用 `attention_rescoring`（CTC 前缀束搜索 + Attention 解码器重打分）。
 
-![网络架构](architecture.png)
+<p align="center">
+  <img src="architecture.png" alt="网络架构" width="760">
+</p>
 
 | 模块 | 配置 |
 |---|---|
@@ -148,7 +170,9 @@ PYTHONPATH="wenet_local" python infer.py your_audio.wav
 
 ### 训练曲线（前 100 个 epoch）
 
-![训练曲线](training_curve.png)
+<p align="center">
+  <img src="training_curve.png" alt="训练曲线" width="760">
+</p>
 
 | 指标 | epoch 20 | epoch 100 | 最佳（epoch 99） |
 |---|---|---|---|

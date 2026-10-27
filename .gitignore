@@ -40,3 +40,5 @@ check_ckpt_clean.py
 patch_train_utils.py
 decode.yaml
 *.bak
+*.bak_*
+*.orig
